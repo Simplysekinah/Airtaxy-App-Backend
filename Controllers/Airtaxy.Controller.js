@@ -6,9 +6,10 @@ const { generateCode } = require('../Config/code')
 const { forgotPasswordModel } = require('../Models/Fogetpassword.model')
 const bcrypt = require("bcryptjs")
 const { response } = require("express")
-const { destinationModel } = require("../Models/Destinations")
+const destinationModel = require("../Models/Destinations")
 const { cloudinary } = require("../Config/Cloudinary")
 const { hotelModel } = require("../Models/Hotel")
+const { BookflightModel } = require("../Models/Bookflight.Model")
 
 const RegisterUser = async (request, response) => {
     const { email, password } = request.body
@@ -65,7 +66,7 @@ const SignedUser = async (request, response) => {
 
 const TokenVerification = async (request, response) => {
     try {
-        const token = request.headers.authorization
+        let token = request.headers.authorization
         token = token.split(" ")[1]
         const email = VerifyToken(token)
         console.log(token)
@@ -73,6 +74,112 @@ const TokenVerification = async (request, response) => {
     } catch (error) {
         console.log(error)
     }
+}
+const getHomepage = async (request, response) => {
+    try {
+        console.log(request.headers.authorization.split(" ")[1])
+        //pass token to check email
+        let token = request.headers.authorization.split(" ")[1]
+        console.log(token);
+        //check email from token
+        const email = VerifyToken(token)
+        console.log(email);
+        //check the email if the person is a signed up user
+        const user = await userModel.findOne({ email })
+        console.log(user);
+        if (!user) {
+            return response.status(404).send({ message: "login your account", status: false })
+        }
+        return response.status(200).send({ token, message: "Welcome back" + user.email, status: true })
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const bookflight = async (request, response) => {
+    try {
+        // const { from, to, dates, passenger, classes } = request.body
+        // console.log(request.body);
+        // //pass token to check email
+        // console.log(request.headers)
+        // let token = request.headers.authorization?.split(" ")[1]
+        // console.log(token, 87);
+        // //check email from token
+        // const email = VerifyToken(token)
+        // console.log(email);
+        // //check the email if the person is a signed up user
+        // const user = await userModel.findOne({ email })
+        // console.log(user);
+        // if (!user) {
+        //     return response.status(404).send({ message: "User does not exist", status: false })
+        // }
+        //         //to check the database
+        //         const locate = await destinationModel.find({ to: to, from: from })
+        //         console.log(locate, "line 566");
+        //         if (!locate) {
+        //             return response.status(402).send({ message: "Location not found", status: false })
+        //         }
+        //         response.status(200).send({ message: "location found", status: true, locate })
+
+        // const content = {
+        //     from,
+        //     to,
+        //     dates,
+        //     passenger,
+        //     classes,
+        //     email: email
+        // }
+        // await BookflightModel.create(content)
+        // return response.status(200).send({ message: "flight booked pick sit", status: true })
+
+        console.log(request.body)
+        let { from, to, dates, passenger, classes } = request.body
+        const token = request.headers.authorization?.split(" ")[1]
+        console.log(token, "Test Test")
+        const email = VerifyToken(token);
+        const verifyUser = await userModel.findOne({ email: email })
+        if (!verifyUser) return response.status(400).send({ message: "Bad request", status: false })
+
+        const locate = await destinationModel.find({ from: from, to: to })
+        console.log(locate);
+        if (!locate) return response.status(404).send({ message: "Destination not found", status: false })
+
+        const bookFlight = await BookflightModel.create({
+            from,
+            to,
+            dates,
+            passenger,
+            classes,
+            email: email
+        })
+
+        if(!bookFlight) return response.status(500).send({message:"FLight not booked"})
+        return response.status(200).send({ message: "flight booked pick sit", status: true })
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const Summary = async (request, response, next) => {
+    try {
+        //pass token to check email
+        let token = request.headers.authorization.split(" ")[1]
+        console.log(token);
+        //check email from token
+        const email = VerifyToken(token)
+        console.log(email);
+        //check the email if the person is a signed up user
+        const user = await userModel.findOne({ email })
+        console.log(user);
+        if (!user) {
+            return response.status(404).send({ message: "User does not exist", status: false })
+        }
+        const summary = await BookflightModel.find({})
+        return response.status(200).send({ summary })
+    } catch (error) {
+        next(error)
+    }
+
 }
 
 const forgotPassword = async (request, response, next) => {
@@ -134,31 +241,29 @@ const resetPassword = async (request, response, next) => {
 
 const imageUpload = async (request, response, next) => {
     try {
-        const { file, location, business,economy,first,seat,seate,seatf,price,pricep,pricef } = request.body;
+        const { file, to, from, classes, BusinessClass, EconomyClass, FirstClass, seat, seate, seatf, price, pricep, pricef } = request.body;
         console.log(request.body)
         const result = await cloudinary.uploader.upload(file)
         console.log(result)
         const { secure_url, public_id } = result
-        const detail = { imageUrl: secure_url,
+        const detail = {
+            imageUrl: secure_url,
             public_id: public_id,
-            location: location,
+            to: to,
+            from: from,
             // business: [business, seat,price] ,
-            seat:seat,
-            price:price,
-            business: [business, seat,price] ,
-            seate:seate,
-            pricep:pricep,
-            economy: [economy, seate,pricep],
-            seatf:seatf,
-            pricef:pricef,
-            first: [first, seatf,pricef] 
-            // business:{
-            //     business:seat,
-            //     business:price
-            // },
-            // economy: [economy, seat,price],
-            // first: [first, seat,price] 
-         }
+            seat: seat,
+            price: price,
+            classes: [
+                { class: BusinessClass, seat: seat, price: price },
+                { class: EconomyClass, seat: seate, price: pricep },
+                { class: FirstClass, seat: seatf, price: pricef }
+            ],
+            seate: seate,
+            pricep: pricep,
+            seatf: seatf,
+            pricef: pricef,
+        }
         const saveImage = await destinationModel.create(detail)
         if (saveImage === null) {
             return response.status(500).send({ message: "Image upload failed", status: false })
@@ -178,6 +283,35 @@ const images = async (request, response, next) => {
         next(error)
     }
 
+}
+
+const location = async (request, response, next) => {
+    const { to, from, classes } = request.body
+    console.log(to, "line 555");
+    console.log(from, "line 456");
+    console.log(classes, "line 456");
+    try {
+        const locate = await destinationModel.find({ to: to, from: from, classes: { classes } })
+        console.log(locate, "line 566");
+        if (!locate) {
+            return response.status(402).send({ message: "Location not found", status: false })
+        }
+        return response.status(200).send({ message: "location found", status: true, locate })
+    } catch (error) {
+        console.error("Error in location query:", error);
+        next(error)
+    }
+}
+
+const seatnumber = async (request, response, next) => {
+    try {
+        const { } = request.body
+        console.log(request.body);
+        const location = await destinationModel.find({ to: to, from: from })
+        return response.status(200).send({ location })
+    } catch (error) {
+        next(error)
+    }
 }
 
 const hotelUpload = async (request, response, next) => {
@@ -208,4 +342,4 @@ const hotels = async (request, response, next) => {
 
 }
 
-module.exports = { RegisterUser, SignedUser, TokenVerification, forgotPassword, verifyPassword, resetPassword, imageUpload, images, hotelUpload, hotels }
+module.exports = { RegisterUser, SignedUser, TokenVerification, bookflight, Summary, forgotPassword, verifyPassword, resetPassword, getHomepage, imageUpload, images, location, hotelUpload, hotels }
