@@ -1,6 +1,6 @@
 const express = require("express");
 const Router = express.Router()
-const { RegisterUser,SignedUser, forgotPassword, verifyPassword, resetPassword, imageUpload, images, hotelUpload, hotels, bookflight, getHomepage, TokenVerification, Summary, location } = require("../Controllers/Airtaxy.Controller");
+const { RegisterUser,SignedUser, forgotPassword, verifyPassword, resetPassword, imageUpload, images, hotelUpload, hotels, bookflight, getHomepage, TokenVerification, Summary, location, flightdelete, seatnumber, getflight, personalInfo, getuser } = require("../Controllers/Airtaxy.Controller");
 const { AirtaxyValidator } = require("../Middleware/AirtaxyValidate");
 const { validate } = require("../Middleware/AirtaxyValidator");
 
@@ -17,6 +17,10 @@ Router.get("/admin/hotelimage", hotels)
 Router.post("/bookflight", bookflight)
 Router.get("/token", TokenVerification)
 Router.get("/details", Summary)
-// Router.post("/location",location)
+Router.post("/deleteflight", flightdelete)
+Router.post("/seatnumber",seatnumber)
+Router.get("/getflight",getflight)
+Router.get("/getuser",getuser)
+Router.post("/personalinformation",personalInfo)
 
 module.exports = Router

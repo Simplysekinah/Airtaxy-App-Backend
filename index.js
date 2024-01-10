@@ -7,8 +7,8 @@ const {errorHandler} = require("./Middleware/ErrorHandler")
 
 app.use(cors())
 
-app.use(express.urlencoded({ extended: true, limit: '200mb' }))
-app.use(express.json())
+app.use(express.urlencoded({ extended: true, limit: '300mb' }))
+app.use(express.json({limit:"300mb"}))
 app.use('/airtaxy', Router)
 
 app.use((request, response, next) => {

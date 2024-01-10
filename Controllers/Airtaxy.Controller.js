@@ -34,6 +34,15 @@ const RegisterUser = async (request, response) => {
     }
 }
 
+
+const getuser= async (request, response)=>{
+    try {
+        const get = await userModel.findOne({})
+        return response.status(200).send({ get })
+    } catch (error) {
+        
+    }
+}
 const SignedUser = async (request, response) => {
     try {
         // console.log(request.body)
@@ -98,40 +107,6 @@ const getHomepage = async (request, response) => {
 
 const bookflight = async (request, response) => {
     try {
-        // const { from, to, dates, passenger, classes } = request.body
-        // console.log(request.body);
-        // //pass token to check email
-        // console.log(request.headers)
-        // let token = request.headers.authorization?.split(" ")[1]
-        // console.log(token, 87);
-        // //check email from token
-        // const email = VerifyToken(token)
-        // console.log(email);
-        // //check the email if the person is a signed up user
-        // const user = await userModel.findOne({ email })
-        // console.log(user);
-        // if (!user) {
-        //     return response.status(404).send({ message: "User does not exist", status: false })
-        // }
-        //         //to check the database
-        //         const locate = await destinationModel.find({ to: to, from: from })
-        //         console.log(locate, "line 566");
-        //         if (!locate) {
-        //             return response.status(402).send({ message: "Location not found", status: false })
-        //         }
-        //         response.status(200).send({ message: "location found", status: true, locate })
-
-        // const content = {
-        //     from,
-        //     to,
-        //     dates,
-        //     passenger,
-        //     classes,
-        //     email: email
-        // }
-        // await BookflightModel.create(content)
-        // return response.status(200).send({ message: "flight booked pick sit", status: true })
-
         console.log(request.body)
         let { from, to, dates, passenger, classes } = request.body
         const token = request.headers.authorization?.split(" ")[1]
@@ -141,7 +116,7 @@ const bookflight = async (request, response) => {
         if (!verifyUser) return response.status(400).send({ message: "Bad request", status: false })
 
         const locate = await destinationModel.find({ from: from, to: to })
-        console.log(locate);
+        console.log(locate,'model');
         if (!locate) return response.status(404).send({ message: "Destination not found", status: false })
 
         const bookFlight = await BookflightModel.create({
@@ -154,9 +129,32 @@ const bookflight = async (request, response) => {
         })
 
         if(!bookFlight) return response.status(500).send({message:"FLight not booked"})
-        return response.status(200).send({ message: "flight booked pick sit", status: true })
+        return response.status(200).send({ message: "flight booked", status: true })
     } catch (error) {
         console.log(error)
+    }
+}
+
+const getflight=async(request,response)=>{
+    try {
+        const get = await BookflightModel.findOne({})
+        return response.status(200).send({ get })
+    } catch (error) {
+        
+    }
+}
+const flightdelete = async(request,response)=>{
+    try {
+        console.log(request.body)
+        let {upid} = request.body
+        console.log(upid);
+        const delet = await BookflightModel.findByIdAndDelete({_id:upid})
+        if(!delet){
+            response.status(500).send({message: "Flight not Cancelled", status: false})
+        }
+        return response.status(200).send({message: "Flight booked Cancelled", status: true})
+    } catch (error) {
+        
     }
 }
 
@@ -167,15 +165,57 @@ const Summary = async (request, response, next) => {
         console.log(token);
         //check email from token
         const email = VerifyToken(token)
-        console.log(email);
+        console.log(email, "111");
         //check the email if the person is a signed up user
         const user = await userModel.findOne({ email })
         console.log(user);
         if (!user) {
             return response.status(404).send({ message: "User does not exist", status: false })
         }
-        const summary = await BookflightModel.find({})
-        return response.status(200).send({ summary })
+        
+        const summary = await BookflightModel.findOne({email})
+        console.log(summary,'summary');
+        
+        from = summary.from,
+        to = summary.to
+        classes = summary.classes
+        console.log(from);
+        console.log(classes,'to');
+        const summaryCheck = await destinationModel.findOne({ 
+            from: from, 
+            to: to
+            // classes: {class: classes}
+        })
+        //all classes details
+        console.log(summaryCheck,'check');
+        //all classes available
+        console.log(summaryCheck.classes);
+            // response.status(200).send({ summary,summaryCheck })
+        //to find the classes that match with the classes the user booked
+        const sekinat = summaryCheck.classes.find((cls)=>cls.class === classes)
+        console.log(sekinat);
+        // the number of seat available for that class
+        console.log(sekinat.seat);
+        //To find the number of seat picked by the user
+        const seatPicked = await BookflightModel.countDocuments({
+            classes:classes
+        })
+        console.log(seatPicked);
+        // to check the totalavailable seat for tht classes
+        const totalSeat = sekinat? sekinat.seat: 0
+        console.log(totalSeat);
+        // seat picked is lessthan or equals to total number of seat available
+        if(seatPicked >= totalSeat){
+            console.log(`All seat for ${classes} are booked`);
+            return response.status(400).send({message:`All seat for ${classes} are booked`});
+        }else{
+            const availableSeat =  totalSeat - seatPicked
+            console.log(`There are ${availableSeat} available seat for ${classes}`);
+            // return response.status(200).send({message:`There are ${availableSeat} available seat for ${classes}`});
+        }
+
+        return response.status(200).send({ summary,summaryCheck })
+
     } catch (error) {
         next(error)
     }
@@ -305,12 +345,73 @@ const location = async (request, response, next) => {
 
 const seatnumber = async (request, response, next) => {
     try {
-        const { } = request.body
-        console.log(request.body);
-        const location = await destinationModel.find({ to: to, from: from })
+        
+        const { seatnumber, _id } = request.body
+        console.log(seatnumber);
+        console.log(_id,'300');
+         //pass token to check email
+        let token = request.headers.authorization.split(" ")[1]
+        console.log(token);
+        //check email from token
+        const email = VerifyToken(token)
+        console.log(email, "111");
+        //check the email if the person is a signed up user
+        const user = await userModel.findOne({ email })
+        console.log(user);
+        if (!user) {
+            return response.status(404).send({ message: "User does not exist", status: false })
+        }
+        const existingDetails = await BookflightModel.findById(_id)
+        if(!existingDetails){
+            return response.status(404).send({message: 'Details not found', status: false})
+        }
+        // const newseat = {number: seatnumber, status:'available'}
+        // console.log(newseat);
+         existingDetails.seatNumber = {number: seatnumber, status:'available'}
+        // existingDetails.seatNumber= [{ seatnumber: number, status: 'available' }];
+        const updatedDetails = await existingDetails.save()
+        console.log(updatedDetails);
+        //  response .status(200).send({ location:updatedDetails })
+        const location = await BookflightModel.findByIdAndUpdate(
+            {_id: _id},
+            {$set: {seatnumber: seatnumber}},
+            { new: true })
         return response.status(200).send({ location })
     } catch (error) {
         next(error)
+    }
+}
+
+const personalInfo = async (request, response, next)=>{
+    try {
+        const {name, address, passport, dob, country, _id} =request.body;
+        console.log(name, address, passport, dob, country, _id);
+         //pass token to check email
+         let token = request.headers.authorization.split(" ")[1]
+         console.log(token);
+         //check email from token
+         const email = VerifyToken(token)
+         console.log(email, "111");
+         //check the email if the person is a signed up user
+         const user = await userModel.findOne({ email })
+         console.log(user);
+         if (!user) {
+             return response.status(404).send({ message: "User does not exist", status: false })
+         }
+         const existingDetails = await userModel.findById(_id)
+         if(!existingDetails){
+             return response.status(404).send({message: 'Details not found', status: false})
+         }
+         existingDetails.personalInformation= {name:name, address:address, passport:passport, dob:dob, country:country}
+         const updatedDetails = await existingDetails.save()
+        console.log(updatedDetails);
+        const personal = await userModel.findByIdAndUpdate(
+            {_id: _id},
+            {$set: {name:name, address:address, passport:passport, dob:dob, country:country}},
+            { new: true })
+        return response.status(200).send({ personal })
+    } catch (error) {
+       console.log(error); 
     }
 }
 
@@ -342,4 +443,4 @@ const hotels = async (request, response, next) => {
 
 }
 
-module.exports = { RegisterUser, SignedUser, TokenVerification, bookflight, Summary, forgotPassword, verifyPassword, resetPassword, getHomepage, imageUpload, images, location, hotelUpload, hotels }
+module.exports = { RegisterUser,getuser, SignedUser, TokenVerification, bookflight,getflight, Summary,flightdelete,seatnumber,personalInfo, forgotPassword, verifyPassword, resetPassword, getHomepage, imageUpload, images, location, hotelUpload, hotels }
