@@ -384,8 +384,8 @@ const seatnumber = async (request, response, next) => {
 
 const personalInfo = async (request, response, next)=>{
     try {
-        const {name, address, passport, dob, country, _id} =request.body;
-        console.log(name, address, passport, dob, country, _id);
+        const {selectedimage, name, address, passport, dob, country, _id} =request.body;
+        console.log(selectedimage,name, address, passport, dob, country, _id);
          //pass token to check email
          let token = request.headers.authorization.split(" ")[1]
          console.log(token);
@@ -407,7 +407,7 @@ const personalInfo = async (request, response, next)=>{
         console.log(updatedDetails);
         const personal = await userModel.findByIdAndUpdate(
             {_id: _id},
-            {$set: {name:name, address:address, passport:passport, dob:dob, country:country}},
+            {$set: {selectedimage:selectedimage, name:name, address:address, passport:passport, dob:dob, country:country}},
             { new: true })
         return response.status(200).send({ personal })
     } catch (error) {

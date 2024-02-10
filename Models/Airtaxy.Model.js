@@ -9,6 +9,7 @@ let userSchema= new mongoose.Schema({
             address:{type:String}, 
             password:{type:String},
             dob:{type:String},
+            selectedimage:{type:String},
             country:{type:String}},
     }],
 })
