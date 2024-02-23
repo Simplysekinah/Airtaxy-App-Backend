@@ -365,6 +365,10 @@ const seatnumber = async (request, response, next) => {
         if(!existingDetails){
             return response.status(404).send({message: 'Details not found', status: false})
         }
+        if (existingDetails.seatNumber && existingDetails.seatNumber.number === seatnumber) {
+            return response.status(400).send({ message: 'Seat already picked by someone', status: false });
+        }
+
         // const newseat = {number: seatnumber, status:'available'}
         // console.log(newseat);
          existingDetails.seatNumber = {number: seatnumber, status:'available'}
