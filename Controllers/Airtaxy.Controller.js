@@ -403,16 +403,17 @@ const personalInfo = async (request, response, next)=>{
          if (!user) {
              return response.status(404).send({ message: "User does not exist", status: false })
          }
-         const existingDetails = await userModel.findById(_id)
+         const existingDetails = await userModel.findById(user._id)
          if(!existingDetails){
              return response.status(404).send({message: 'Details not found', status: false})
          }
          existingDetails.personalInformation= {name:name, address:address, passport:passport, dob:dob, country:country}
          const updatedDetails = await existingDetails.save()
         console.log(updatedDetails);
+        const profilepicture= await cloudinary.uploader.upload(selectedimage)
         const personal = await userModel.findByIdAndUpdate(
-            {_id: _id},
-            {$set: {selectedimage:selectedimage, name:name, address:address, passport:passport, dob:dob, country:country}},
+            {_id: user._id},
+            {$set: {selectedimage:profilepicture.secure_url, name:name, address:address, passport:passport, dob:dob, country:country}},
             { new: true })
         return response.status(200).send({ personal })
     } catch (error) {
