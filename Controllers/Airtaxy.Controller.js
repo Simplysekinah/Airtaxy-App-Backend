@@ -411,11 +411,15 @@ const personalInfo = async (request, response, next)=>{
          const updatedDetails = await existingDetails.save()
         console.log(updatedDetails);
         const profilepicture= await cloudinary.uploader.upload(selectedimage)
-        const personal = await userModel.findByIdAndUpdate(
-            {_id: user._id},
-            {$set: {selectedimage:profilepicture.secure_url, name:name, address:address, passport:passport, dob:dob, country:country}},
-            { new: true })
-        return response.status(200).send({ personal })
+        console.log("profilepicture:",profilepicture);
+        if (profilepicture) {
+            const personal = await userModel.findByIdAndUpdate(
+                {_id: user._id},
+                {$set: {selectedimage:profilepicture.secure_url, name:name, address:address, passport:passport, dob:dob, country:country}},
+                { new: true })
+                return response.status(200).send({ personal })
+        }
+         
     } catch (error) {
        console.log(error); 
     }
