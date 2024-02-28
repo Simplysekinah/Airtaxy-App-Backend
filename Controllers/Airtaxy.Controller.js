@@ -114,11 +114,12 @@ const bookflight = async (request, response) => {
         const email = VerifyToken(token);
         const verifyUser = await userModel.findOne({ email: email })
         if (!verifyUser) return response.status(400).send({ message: "Bad request", status: false })
-        console.log({destination_tbs},'');
+        // console.log({destination_tbs},'');
         const locate = await destinationModel.find({ from: from , to: to })
         console.log(locate,'model');
-        if (locate.length === 0) return response.status(404).send({ message: "Destination not found", status: false })
-
+        if (locate.length === 0) {
+            return response.status(404).send({ message: "Destination not found", status: false })
+        }
         const bookFlight = await BookflightModel.create({
             from,
             to,
